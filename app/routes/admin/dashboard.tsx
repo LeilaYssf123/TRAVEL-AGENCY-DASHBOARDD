@@ -1,9 +1,13 @@
 import {Header, StatsCard, TripCard} from "../../../components";
 import {dashboardStats, user,allTrips} from "~/constants";
+import {getUser} from "~/appwrite/auth";
+import type {Route} from './+types/dashboard';
 
+
+const { totalUsers, usersJoined, totalTrips, tripsCreated, userRole } = dashboardStats;
 const Dashboard = () => {
 
-    const { totalUsers, usersJoined, totalTrips, tripsCreated, userRole } = dashboardStats;
+
     return (
         <main className ="Dashboard wrapper">
             <Header
