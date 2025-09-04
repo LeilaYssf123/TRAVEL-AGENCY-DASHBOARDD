@@ -37,28 +37,17 @@ interface Route {
     };
 }
 
+// Liste statique de pays (remplace l'API)
 export const loader = async () => {
-    try {
-        const response = await fetch('https://restcountries.com/v3.1/all');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        console.log("API Response:", data);
-
-        if (Array.isArray(data)) {
-            return data.map((country: any) => ({
-                name: country.flags?.png ? `${country.flags.png} ${country.name.common}` : country.name.common,
-                coordinates: country.latlng || [0, 0],
-                value: country.name.common,
-                openStreetMap: country.maps?.openStreetMap,
-            }));
-        } else {
-            console.error("Data is not an array, response:", data);
-            return [];
-        }
-    } catch (error) {
-        console.error("Error loading countries:", error);
-        return [];
-    }
+    const staticCountries: Country[] = [
+        { name: "France", coordinates: [46.2276, 2.2137], value: "France" },
+        { name: "Japan", coordinates: [36.2048, 138.2529], value: "Japan" },
+        { name: "Brazil", coordinates: [-14.2350, -51.9253], value: "Brazil" },
+        { name: "Canada", coordinates: [56.1304, -106.3468], value: "Canada" },
+        { name: "Australia", coordinates: [-25.2744, 133.7751], value: "Australia" },
+    ];
+    console.log("Static Loader Data:", staticCountries);
+    return staticCountries;
 };
 
 const CreateTrip = ({ loaderData }: Route.ComponentProps) => {
@@ -151,27 +140,14 @@ const CreateTrip = ({ loaderData }: Route.ComponentProps) => {
                 <form className="trip-form" onSubmit={handleSubmit}>
                     <div>
                         <label htmlFor="country">Country</label>
-                        <ComboBoxComponent
+                        <input
                             id="country"
-                            dataSource={countryData}
-                            fields={{ text: 'text', value: 'value' }}
-                            placeholder="Select a Country"
-                            className="combo-box"
-                            change={(e: { value: string | undefined }) => {
-                                if (e.value) handleChange('country', e.value);
-                            }}
-                            allowFiltering
-                            filtering={(e) => {
-                                const query = e.text.toLowerCase();
-                                e.updateData(
-                                    countries
-                                        .filter((country) => country.name.toLowerCase().includes(query))
-                                        .map((country) => ({
-                                            text: country.name,
-                                            value: country.value
-                                        }))
-                                );
-                            }}
+                            name="country"
+                            type="text"
+                            placeholder="Tapez un pays (ex. France)"
+                            className="form-input placeholder:text-gray-100 combo-box"
+                            onChange={(e) => handleChange('country', e.target.value)}
+                            value={formData.country}
                         />
                     </div>
 

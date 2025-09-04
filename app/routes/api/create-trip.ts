@@ -1,10 +1,10 @@
-import {type ActionFunctionArgs, data} from "react-router";
-import {GoogleGenerativeAI} from "@google/generative-ai";
-import {parseMarkdownToJson} from "~/lib/utils";
-import {appwriteConfig, database} from "~/appwrite/client";
-import {ID} from "appwrite";
+import { type ActionFunctionArgs, data } from "react-router";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { parseMarkdownToJson } from "~/lib/utils";
+import { appwriteConfig, database } from "~/appwrite/client";
+import { ID } from "appwrite";
 
-export const action = async ({request }: ActionFunctionArgs) =>{
+export const action = async ({ request }: ActionFunctionArgs) => {
     const {
         country,
         numberOfDays,
@@ -67,16 +67,27 @@ export const action = async ({request }: ActionFunctionArgs) =>{
     }`;
 
         const textResult = await genAI
-            .getGenerativeModel({model: 'gemini-2.0-flash'})
-            .generateContent([prompt])
+            .getGenerativeModel({ model: 'gemini-2.0-flash' })
+            .generateContent([prompt]);
 
         const trip = parseMarkdownToJson(textResult.response.text());
 
-        const imageResponse = await fetch(
-            `https://api.unsplash.com/search/photos?query=${country} ${interests} ${travelStyle}&client-id=${unsplashApiKey}`,
-        );
-        const imageUrls = ( await imageResponse.json()).results.slice(0,3)
-            .map((result: any) => result.urls?.regular || null);
+        let imageUrls = [];
+        try {
+            const imageResponse = await fetch(
+                `https://api.unsplash.com/search/photos?query=${country} ${interests} ${travelStyle}&client-id=${unsplashApiKey}`,
+            );
+            if (imageResponse.ok) {
+                const imageData = await imageResponse.json();
+                imageUrls = imageData.results ? imageData.results.slice(0, 3).map((result: any) => result.urls?.regular || null) : [];
+            } else {
+                console.warn("Unsplash API failed, using empty imageUrls:", imageResponse.status);
+                imageUrls = []; // Si l'API échoue, on utilise une liste vide
+            }
+        } catch (e) {
+            console.error("Error fetching images from Unsplash:", e);
+            imageUrls = []; // En cas d'erreur réseau, on utilise une liste vide
+        }
 
         const result = await database.createDocument(
             appwriteConfig.databaseId,
@@ -88,13 +99,9 @@ export const action = async ({request }: ActionFunctionArgs) =>{
                 imageUrls,
                 userId,
             }
-        )
-        return data ({id: result.$id})
-    } catch(e){
-        console.error('Error generating travel plan',e);
+        );
+        return data({ id: result.$id });
+    } catch (e) {
+        console.error('Error generating travel plan', e);
     }
-
-
-
-
-}
+};
