@@ -74,19 +74,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         let imageUrls = [];
         try {
+            const query = `${country} ${interests} ${travelStyle}`.trim();
             const imageResponse = await fetch(
-                `https://api.unsplash.com/search/photos?query=${country} ${interests} ${travelStyle}&client-id=${unsplashApiKey}`,
+                `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&client_id=${unsplashApiKey}&per_page=3`
             );
             if (imageResponse.ok) {
                 const imageData = await imageResponse.json();
-                imageUrls = imageData.results ? imageData.results.slice(0, 3).map((result: any) => result.urls?.regular || null) : [];
+                imageUrls = imageData.results ? imageData.results.map((result: any) => result.urls.regular) : [];
             } else {
-                console.warn("Unsplash API failed, using empty imageUrls:", imageResponse.status);
-                imageUrls = []; // Si l'API échoue, on utilise une liste vide
+                console.warn("Unsplash API failed, status:", imageResponse.status);
+                imageUrls = ["https://via.placeholder.com/400x300?text=No+Image"];
             }
         } catch (e) {
             console.error("Error fetching images from Unsplash:", e);
-            imageUrls = []; // En cas d'erreur réseau, on utilise une liste vide
+            imageUrls = ["https://via.placeholder.com/400x300?text=No+Image"];
         }
 
         const result = await database.createDocument(
@@ -100,6 +101,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 userId,
             }
         );
+
+        console.log("Image URLs enregistrées :", imageUrls);
         return data({ id: result.$id });
     } catch (e) {
         console.error('Error generating travel plan', e);
